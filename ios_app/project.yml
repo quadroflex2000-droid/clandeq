@@ -33,3 +33,9 @@ targets:
       PRODUCT_BUNDLE_IDENTIFIER: com.papametall.Clandeq.watchkitapp
       MARKETING_VERSION: "1.0.0"
       CURRENT_PROJECT_VERSION: "1"
+
+schemes:
+  Clandeq:
+    build:
+      targets:
+        Clandeq: [run, test, profile, analyze]
