@@ -1,0 +1,48 @@
+name: Build Clandeq iOS Simulator App
+
+on:
+  push:
+    branches: [ main, master, dev ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  build-simulator:
+    name: Build iOS Simulator App (For Web Appetize.io)
+    runs-on: macos-14
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Select Xcode Version
+        run: sudo xcode-select -s /Applications/Xcode_15.3.app
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate Xcode Project
+        run: |
+          cd ios_app
+          xcodegen generate
+
+      - name: Build iOS App for Simulator
+        run: |
+          xcodebuild -project ios_app/Clandeq.xcodeproj \
+                     -scheme Clandeq \
+                     -sdk iphonesimulator \
+                     -configuration Debug \
+                     -derivedDataPath build_derived \
+                     CODE_SIGNING_ALLOWED=NO \
+                     clean build
+
+      - name: Compress Simulator Build
+        run: |
+          cd build_derived/Build/Products/Debug-iphonesimulator/
+          zip -r ../../../../Clandeq-Simulator.zip Clandeq.app
+
+      - name: Upload Simulator ZIP Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Clandeq-Simulator
+          path: Clandeq-Simulator.zip
