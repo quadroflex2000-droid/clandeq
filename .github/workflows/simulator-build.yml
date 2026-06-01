@@ -30,7 +30,7 @@ jobs:
         run: |
           xcodebuild -project ios_app/Clandeq.xcodeproj \
                      -scheme Clandeq \
-                     -sdk iphonesimulator \
+                     -destination "platform=iOS Simulator,name=iPhone 15" \
                      -configuration Debug \
                      -derivedDataPath build_derived \
                      CODE_SIGNING_ALLOWED=NO \

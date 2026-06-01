@@ -33,7 +33,7 @@ jobs:
         run: |
           xcodebuild -project ios_app/Clandeq.xcodeproj \
                      -scheme Clandeq \
-                     -sdk iphoneos \
+                     -destination "generic/platform=iOS" \
                      -configuration Release \
                      CODE_SIGNING_ALLOWED=NO \
                      clean build
