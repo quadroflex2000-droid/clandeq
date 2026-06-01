@@ -38,4 +38,10 @@ jobs:
                      CODE_SIGNING_ALLOWED=NO \
                      CODE_SIGNING_REQUIRED=NO \
                      CODE_SIGN_IDENTITY="" \
-                     clean build
+                     clean build > build.log 2>&1 || (
+                       echo "### ⚠️ СБОЙ СБОРКИ XCODE (ОШИБКИ КОМПИЛЯЦИИ):" >> $GITHUB_STEP_SUMMARY
+                       echo '```' >> $GITHUB_STEP_SUMMARY
+                       grep -i "error:" build.log | head -n 30 >> $GITHUB_STEP_SUMMARY
+                       echo '```' >> $GITHUB_STEP_SUMMARY
+                       exit 1
+                     )
