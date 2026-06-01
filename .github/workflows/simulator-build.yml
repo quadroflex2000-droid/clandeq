@@ -64,13 +64,8 @@ jobs:
           git commit -m "ci: dump build products tree [skip ci]" || echo "No changes"
           git push origin main
 
-      - name: Compress Simulator Build
-        run: |
-          cd build_derived/Build/Products/Debug-iphonesimulator/
-          zip -r ../../../../Clandeq-Simulator.zip Clandeq.app
-
       - name: Upload Simulator ZIP Artifact
         uses: actions/upload-artifact@v4
         with:
           name: Clandeq-Simulator
-          path: Clandeq-Simulator.zip
+          path: build_derived/Build/Products/Debug-iphonesimulator/Clandeq.app
