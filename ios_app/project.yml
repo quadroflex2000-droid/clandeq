@@ -10,6 +10,7 @@ targets:
       - path: Sources/iOS
     dependencies:
       - target: ClandeqWatch
+      - sdk: sqlite3
     settings:
       GENERATE_INFOPLIST_FILE: YES
       PRODUCT_BUNDLE_IDENTIFIER: com.papametall.Clandeq

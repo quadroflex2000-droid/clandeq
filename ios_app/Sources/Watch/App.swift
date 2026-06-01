@@ -1,5 +1,6 @@
 import SwiftUI
 import Combine
+import WatchKit
 
 @main
 struct ClandeqWatchApp: App {
