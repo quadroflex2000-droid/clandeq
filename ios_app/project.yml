@@ -8,6 +8,7 @@ targets:
     deploymentTarget: "17.0"
     sources:
       - path: Sources/iOS
+      - path: Sources/Shared
     dependencies:
       - target: ClandeqWatch
         embed: false
@@ -24,8 +25,7 @@ targets:
     deploymentTarget: "10.0"
     sources:
       - path: Sources/Watch
-      - path: Sources/iOS/WatchSessionManager.swift
-      - path: Sources/iOS/HapticManager.swift
+      - path: Sources/Shared
     settings:
       GENERATE_INFOPLIST_FILE: YES
       PRODUCT_BUNDLE_IDENTIFIER: com.papametall.Clandeq.watchkitapp
