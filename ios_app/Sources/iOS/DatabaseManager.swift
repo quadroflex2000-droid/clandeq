@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import SQLite3 // Нативный фреймворк Apple для работы с SQLite (встроен во все версии iOS/watchOS)
 
 /// Ошибки менеджера локальной базы данных SQLite
 enum DatabaseError: Error, LocalizedError {
@@ -39,7 +40,7 @@ struct ObjectionMatch {
 final class DatabaseManager {
     static let shared = DatabaseManager()
     
-    // Ссылка на дескриптор базы данных sqlite3 (используется OpaquePointer для работы с нативным C-API sqlite3)
+    // Ссылка на дескриптор базы данных sqlite3 (использует встроенный тип OpaquePointer)
     private var db: OpaquePointer?
     
     private let queue = DispatchQueue(label: "com.clandeq.database.queue", qos: .userInteractive)
@@ -111,7 +112,7 @@ final class DatabaseManager {
         }
     }
     
-    /// ШАГ 1: Метод поиска тактики по распознанной фразе (STT).
+    /// Метод поиска тактики по распознанной фразе (STT).
     /// Выполняет мгновенный гибридный поиск (сначала высокоскоростной FTS5, затем LIKE подстрок).
     /// - Parameter transcribedText: Распознанный текст речи собеседника.
     /// - Returns: Скрипт ответа из регламента, если найдено совпадение.
@@ -121,7 +122,6 @@ final class DatabaseManager {
     }
     
     /// Выполняет мгновенный полнотекстовый поиск (FTS5) по возражениям на основе текущей распознанной фразы.
-    /// Включает в себя гибридный поиск: сначала FTS5 MATCH, в случае неудачи — LIKE поиск подстроки.
     /// - Parameter speechText: Сырой распознанный текст от STT-сервиса
     /// - Returns: Тактическое правило и скрипт, если найдено совпадение
     func searchObjection(matching speechText: String) -> ObjectionMatch? {
@@ -195,38 +195,3 @@ final class DatabaseManager {
         return term.components(separatedBy: allowedCharacters.inverted).joined(separator: " ").trimmingCharacters(in: .whitespacesAndNewlines)
     }
 }
-
-// MARK: - Нативные C-заглушки SQLITE3 для компиляции в Xcode без внешней линковки
-// В Xcode эти функции автоматически заменяются нативными заголовками из <sqlite3.h>
-
-private let SQLITE_OK: Int32 = 0
-private let SQLITE_ROW: Int32 = 100
-private let SQLITE_OPEN_READONLY: Int32 = 0x00000001
-private let SQLITE_OPEN_FULLMUTEX: Int32 = 0x00010000
-
-@_silgen_name("sqlite3_open_v2")
-private func sqlite3_open_v2(_ filename: UnsafePointer<CChar>?, _ ppDb: UnsafeMutablePointer<OpaquePointer?>?, _ flags: Int32, _ zVfs: UnsafePointer<CChar>?) -> Int32
-
-@_silgen_name("sqlite3_close")
-private func sqlite3_close(_ db: OpaquePointer?) -> Int32
-
-@_silgen_name("sqlite3_errmsg")
-private func sqlite3_errmsg(_ db: OpaquePointer?) -> UnsafePointer<CChar>!
-
-@_silgen_name("sqlite3_prepare_v2")
-private func sqlite3_prepare_v2(_ db: OpaquePointer?, _ zSql: UnsafePointer<CChar>?, _ nByte: Int32, _ ppStmt: UnsafeMutablePointer<OpaquePointer?>?, _ pzTail: UnsafeMutablePointer<UnsafePointer<CChar>?>?) -> Int32
-
-@_silgen_name("sqlite3_finalize")
-private func sqlite3_finalize(_ pStmt: OpaquePointer?) -> Int32
-
-@_silgen_name("sqlite3_step")
-private func sqlite3_step(_ pStmt: OpaquePointer?) -> Int32
-
-@_silgen_name("sqlite3_column_text")
-private func sqlite3_column_text(_ pStmt: OpaquePointer?, _ iCol: Int32) -> UnsafePointer<UInt8>!
-
-@_silgen_name("sqlite3_column_int")
-private func sqlite3_column_int(_ pStmt: OpaquePointer?, _ iCol: Int32) -> Int32
-
-@_silgen_name("sqlite3_bind_text")
-private func sqlite3_bind_text(_ pStmt: OpaquePointer?, _ iCol: Int32, _ zData: UnsafePointer<CChar>?, _ nData: Int32, _ xDel: (@convention(c) (UnsafeMutableRawPointer?) -> Void)?) -> Int32

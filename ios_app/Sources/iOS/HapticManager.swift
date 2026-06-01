@@ -11,6 +11,8 @@ import CoreHaptics
 
 #if os(watchOS)
 import WatchKit
+#elseif os(iOS)
+import UIKit // Необходим для работы с UIFeedbackGenerator и его наследниками в iOS
 #endif
 
 /// HapticManager отвечает за воспроизведение тактильных рисунков (Haptic Patterns) на руке менеджера.
@@ -180,7 +182,6 @@ final class HapticManager {
             device.play(.notification)
         }
         #elseif os(iOS)
-        let generator: UIFeedbackGenerator
         switch type {
         case .click:
             let impact = UIImpactFeedbackGenerator(style: .light)
