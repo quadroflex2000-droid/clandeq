@@ -34,6 +34,8 @@ jobs:
                      -configuration Debug \
                      -derivedDataPath build_derived \
                      CODE_SIGNING_ALLOWED=NO \
+                     CODE_SIGNING_REQUIRED=NO \
+                     CODE_SIGN_IDENTITY="" \
                      clean build
 
       - name: Compress Simulator Build
