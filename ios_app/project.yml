@@ -8,6 +8,8 @@ targets:
     deploymentTarget: "17.0"
     sources:
       - path: Sources/iOS
+    dependencies:
+      - target: ClandeqWatch
     settings:
       GENERATE_INFOPLIST_FILE: YES
       PRODUCT_BUNDLE_IDENTIFIER: com.papametall.Clandeq
@@ -15,15 +17,13 @@ targets:
       CURRENT_PROJECT_VERSION: "1"
 
   ClandeqWatch:
-    type: watchos-application
+    type: application.watchapp2
     platform: watchOS
     deploymentTarget: "10.0"
     sources:
       - path: Sources/Watch
       - path: Sources/iOS/WatchSessionManager.swift
       - path: Sources/iOS/HapticManager.swift
-    dependencies:
-      - target: Clandeq
     settings:
       GENERATE_INFOPLIST_FILE: YES
       PRODUCT_BUNDLE_IDENTIFIER: com.papametall.Clandeq.watchkitapp
