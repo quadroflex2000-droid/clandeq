@@ -14,7 +14,7 @@ targets:
         embed: false
       - sdk: libsqlite3.tbd
     info:
-      path: Sources/iOS/Info.plist
+      path: Info.plist
       properties:
         CFBundleDisplayName: Clandeq
         CFBundleIdentifier: com.papametall.Clandeq
@@ -32,7 +32,7 @@ targets:
       - path: Sources/Watch
       - path: Sources/Shared
     info:
-      path: Sources/Watch/Info.plist
+      path: WatchInfo.plist
       properties:
         CFBundleDisplayName: Clandeq Watch
         CFBundleIdentifier: com.papametall.Clandeq.watchkitapp
