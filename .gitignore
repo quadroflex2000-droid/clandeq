@@ -1,0 +1,35 @@
+# OS files
+.DS_Store
+Thumbs.db
+*.swp
+
+# Compiled Go files and binaries
+*.exe
+*.exe~
+server
+bin/
+dist/
+
+# Env secrets
+.env
+*.env
+secret/
+secrets/
+config.yaml
+credentials.json
+
+# Xcode / iOS / Swift build files
+build/
+DerivedData/
+*.moved-aside
+*.xcuserstate
+*.xcworkspace/xcuserdata/
+*.xcodeproj/xcuserdata/
+*.xcodeproj/project.xcworkspace/xcuserdata/
+.build/
+Packages/
+Package.resolved
+
+# CocoaPods
+Pods/
+Podfile.lock

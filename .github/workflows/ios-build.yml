@@ -1,0 +1,39 @@
+name: Clandeq iOS & watchOS Cloud Build
+
+on:
+  push:
+    branches: [ main, master, dev ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  build-ios:
+    name: Build Clandeq Swift Code (macOS Sonoma Cloud)
+    runs-on: macos-14
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Select Xcode Version
+        run: sudo xcode-select -s /Applications/Xcode_15.3.app
+
+      - name: Verify Swift Toolchain
+        run: swift --version
+
+      - name: Build iOS App Scheme
+        run: |
+          # Check if project or workspace exists
+          if [ -d "ios_app/Clandeq.xcodeproj" ]; then
+            echo "Building Xcode Project..."
+            xcodebuild -project ios_app/Clandeq.xcodeproj \
+                       -scheme Clandeq \
+                       -sdk iphoneos \
+                       -configuration Release \
+                       CODE_SIGNING_ALLOWED=NO \
+                       clean build
+          else
+            echo "Xcode project not found, analyzing Swift files..."
+            # Fallback to swift compiler check if no project file is committed yet
+            find ios_app -name "*.swift" -print0 | xargs -0 swiftc -sdk $(xcrun --sdk iphoneos --show-sdk-path) -target arm64-apple-ios17.0
+          fi
