@@ -21,19 +21,19 @@ jobs:
       - name: Verify Swift Toolchain
         run: swift --version
 
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate Xcode Project
+        run: |
+          cd ios_app
+          xcodegen generate
+
       - name: Build iOS App Scheme
         run: |
-          # Check if project or workspace exists
-          if [ -d "ios_app/Clandeq.xcodeproj" ]; then
-            echo "Building Xcode Project..."
-            xcodebuild -project ios_app/Clandeq.xcodeproj \
-                       -scheme Clandeq \
-                       -sdk iphoneos \
-                       -configuration Release \
-                       CODE_SIGNING_ALLOWED=NO \
-                       clean build
-          else
-            echo "Xcode project not found, analyzing Swift files..."
-            # Fallback to swift compiler check if no project file is committed yet
-            find ios_app -name "*.swift" -print0 | xargs -0 swiftc -sdk $(xcrun --sdk iphoneos --show-sdk-path) -target arm64-apple-ios17.0
-          fi
+          xcodebuild -project ios_app/Clandeq.xcodeproj \
+                     -scheme Clandeq \
+                     -sdk iphoneos \
+                     -configuration Release \
+                     CODE_SIGNING_ALLOWED=NO \
+                     clean build

@@ -17,11 +17,11 @@ enum DatabaseError: Error, LocalizedError {
     var errorDescription: String? {
         switch self {
         case .connectionFailed(let message):
-            return "Не удалось подключиться к базе данных: \(message)"
+            return "Не удалось подключиться к локальной базе данных: \(message)"
         case .queryFailed(let message):
-            return "Ошибка выполнения запроса: \(message)"
+            return "Ошибка выполнения SQL-запроса: \(message)"
         case .recordNotFound:
-            return "Запись не найдена в оффлайн-контексте."
+            return "Запись не найдена в локальном контексте сделки."
         }
     }
 }
@@ -51,7 +51,7 @@ final class DatabaseManager {
     }
     
     /// Открывает соединение с оффлайн-базой данных конкретной сделки
-    /// - Parameter fileURL: Путь к .sqlite файлу в песочнице iPhone
+    /// - Parameter fileURL: Путь к .sqlite файлу в песочнице iPhone (DocumentDirectory)
     func openDatabase(at fileURL: URL) throws {
         try queue.sync {
             closeDatabase() // Закрываем предыдущее соединение, если оно существовало
@@ -60,7 +60,7 @@ final class DatabaseManager {
             print("[DatabaseManager] Открытие базы данных по пути: \(fileURL.path)")
             #endif
             
-            // Открываем базу в режиме Read-Only (безопасно, предотвращает повреждение кэша)
+            // Открываем базу в режиме Read-Only (безопасно, предотвращает повреждение файла при случайной записи)
             let flags = SQLITE_OPEN_READONLY | SQLITE_OPEN_FULLMUTEX
             
             // Вызов нативного C-API sqlite3
@@ -79,7 +79,7 @@ final class DatabaseManager {
             sqlite3_close(db)
             db = nil
             #if DEBUG
-            print("[DatabaseManager] Локальная база данных успешно закрыта.")
+            print("[DatabaseManager] Локальное соединение с SQLite закрыто.")
             #endif
         }
     }
@@ -111,9 +111,18 @@ final class DatabaseManager {
         }
     }
     
+    /// ШАГ 1: Метод поиска тактики по распознанной фразе (STT).
+    /// Выполняет мгновенный гибридный поиск (сначала высокоскоростной FTS5, затем LIKE подстрок).
+    /// - Parameter transcribedText: Распознанный текст речи собеседника.
+    /// - Returns: Скрипт ответа из регламента, если найдено совпадение.
+    func findTactic(for transcribedText: String) -> String? {
+        guard let match = searchObjection(matching: transcribedText) else { return nil }
+        return match.responseScript
+    }
+    
     /// Выполняет мгновенный полнотекстовый поиск (FTS5) по возражениям на основе текущей распознанной фразы.
     /// Включает в себя гибридный поиск: сначала FTS5 MATCH, в случае неудачи — LIKE поиск подстроки.
-    /// - Parameter speechText: Сырой распознанный текст от Whisper.cpp
+    /// - Parameter speechText: Сырой распознанный текст от STT-сервиса
     /// - Returns: Тактическое правило и скрипт, если найдено совпадение
     func searchObjection(matching speechText: String) -> ObjectionMatch? {
         guard let db = db, !speechText.isEmpty else { return nil }
@@ -180,15 +189,15 @@ final class DatabaseManager {
         return nil
     }
     
-    // Фильтрация спецсимволов для предотвращения падений синтаксического анализатора FTS5
+    // Фильтрация спецсимволов для предотвращения ошибок синтаксического анализатора FTS5
     private func cleanSearchTerm(_ term: String) -> String {
         let allowedCharacters = CharacterSet.alphanumerics.union(.whitespaces)
         return term.components(separatedBy: allowedCharacters.inverted).joined(separator: " ").trimmingCharacters(in: .whitespacesAndNewlines)
     }
 }
 
-// MARK: - Нативные C-заглушки SQLITE3 для компиляции в Xcode без внешней линковки в сторонних утилитах
-// (В Xcode эти функции автоматически заменяются нативными заголовками из <sqlite3.h>)
+// MARK: - Нативные C-заглушки SQLITE3 для компиляции в Xcode без внешней линковки
+// В Xcode эти функции автоматически заменяются нативными заголовками из <sqlite3.h>
 
 private let SQLITE_OK: Int32 = 0
 private let SQLITE_ROW: Int32 = 100

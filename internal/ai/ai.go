@@ -57,7 +57,7 @@ func (s *AIService) Close() error {
 
 // GenerateNegotiationContext принимает сырые данные CRM и формирует сжатый контекст с тактическими правилами
 func (s *AIService) GenerateNegotiationContext(ctx context.Context, rawCRMData string) (*ClandeqContext, error) {
-	model := s.client.GenerativeModel("gemini-1.5-flash")
+	model := s.client.GenerativeModel("gemini-2.5-flash")
 
 	// Настройка системного промпта для жесткой калибровки формата вывода
 	model.SystemInstruction = &genai.Content{
