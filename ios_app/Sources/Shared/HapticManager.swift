@@ -7,93 +7,75 @@
 //
 
 import Foundation
-import CoreHaptics
 
 #if os(watchOS)
 import WatchKit
 #elseif os(iOS)
-import UIKit // Необходим для работы с UIFeedbackGenerator и его наследниками в iOS
+import UIKit
+import CoreHaptics // CoreHaptics доступен на iOS, но отсутствует на watchOS SDK
 #endif
 
 /// HapticManager отвечает за воспроизведение тактильных рисунков (Haptic Patterns) на руке менеджера.
-/// На Apple Watch он генерирует вибрацию в полной тишине, обеспечивая менеджеру скрытые подсказки на переговорах.
 final class HapticManager {
     static let shared = HapticManager()
     
-    // Движок тактильной отдачи CoreHaptics
+    #if os(iOS)
+    // Движок тактильной отдачи CoreHaptics (используется только на iPhone)
     private var hapticEngine: CHHapticEngine?
     private var supportsCoreHaptics = false
+    #endif
     
     private init() {
+        #if os(iOS)
         setupHapticEngine()
+        #endif
     }
     
-    /// Инициализация и прогрев тактильного движка CoreHaptics
+    #if os(iOS)
+    /// Инициализация и прогрев тактильного движка CoreHaptics на iPhone
     private func setupHapticEngine() {
-        // Проверяем аппаратную поддержку CoreHaptics на данном устройстве
         let capabilities = CHHapticEngine.capabilitiesForHardware()
         supportsCoreHaptics = capabilities.supportsHaptics
         
-        guard supportsCoreHaptics else {
-            #if DEBUG
-            print("[HapticManager] Устройство не поддерживает CoreHaptics. Будет использован нативный fallback-режим.")
-            #endif
-            return
-        }
+        guard supportsCoreHaptics else { return }
         
         do {
             hapticEngine = try CHHapticEngine()
-            
-            // Обработчик неожиданного отключения движка СУБД/ОС (например, при сильной загрузке)
             hapticEngine?.resetHandler = { [weak self] in
-                #if DEBUG
-                print("[HapticManager] Ресет тактильного движка. Перезапускаем...")
-                #endif
                 try? self?.hapticEngine?.start()
             }
-            
-            // Обработчик остановки движка при неактивности
-            hapticEngine?.stoppedHandler = { reason in
-                #if DEBUG
-                print("[HapticManager] Движок остановлен. Причина: \(reason.rawValue)")
-                #endif
-            }
-            
-            // Запуск движка
             try hapticEngine?.start()
         } catch {
-            print("[HapticManager] Ошибка инициализации CoreHaptics: \(error.localizedDescription)")
             supportsCoreHaptics = false
         }
     }
+    #endif
     
-    /// Генерирует физический рисунок вибрации на часах/телефоне в зависимости от уровня критичности триггера
+    /// Генерирует физический рисунок вибрации на часах/телефоне
     /// - Parameter patternId: 1 — Мягкая подсказка, 2 — Предупреждение о стрессе, 3 — Смертельный триггер конкурента
     func triggerHaptic(patternId: Int) {
-        // Убедимся, что тактильный движок запущен перед воспроизведением
+        #if os(iOS)
         if supportsCoreHaptics {
             try? hapticEngine?.start()
         }
+        #endif
         
         switch patternId {
         case 1:
-            // Мягкий тактильный сигнал (легкое похлопывание): Низкая интенсивность и резкость
             playSoftGuidance()
         case 2:
-            // Настойчивое предупреждение (три пульсирующих вибрации)
             playStressAlarm()
         case 3:
-            // Двойной быстрый удар (триггер конкурента): Максимальная интенсивность и жесткость
             playCompetitorAlert()
         default:
             playSoftGuidance()
         }
     }
     
-    // MARK: - CoreHaptics Рисунки
+    // MARK: - Рисунки вибрации
     
-    /// Паттерн 1: Мягкий одиночный клик (Soft Transient)
     private func playSoftGuidance() {
+        #if os(iOS)
         guard supportsCoreHaptics, let engine = hapticEngine else {
             playFallback(type: .click)
             return
@@ -101,7 +83,6 @@ final class HapticManager {
         
         let intensity = CHHapticEventParameter(parameterID: .hapticIntensity, value: 0.4)
         let sharpness = CHHapticEventParameter(parameterID: .hapticSharpness, value: 0.3)
-        
         let event = CHHapticEvent(eventType: .hapticTransient, parameters: [intensity, sharpness], relativeTime: 0.0)
         
         do {
@@ -111,10 +92,13 @@ final class HapticManager {
         } catch {
             playFallback(type: .click)
         }
+        #else
+        playFallback(type: .click)
+        #endif
     }
     
-    /// Паттерн 2: Пульсирующая вибрация (Alarm/Stress Pulse)
     private func playStressAlarm() {
+        #if os(iOS)
         guard supportsCoreHaptics, let engine = hapticEngine else {
             playFallback(type: .directionUp)
             return
@@ -123,7 +107,6 @@ final class HapticManager {
         let intensity = CHHapticEventParameter(parameterID: .hapticIntensity, value: 0.7)
         let sharpness = CHHapticEventParameter(parameterID: .hapticSharpness, value: 0.6)
         
-        // Создаем три последовательных удара с интервалом в 150мс
         let event1 = CHHapticEvent(eventType: .hapticTransient, parameters: [intensity, sharpness], relativeTime: 0.0)
         let event2 = CHHapticEvent(eventType: .hapticTransient, parameters: [intensity, sharpness], relativeTime: 0.15)
         let event3 = CHHapticEvent(eventType: .hapticTransient, parameters: [intensity, sharpness], relativeTime: 0.3)
@@ -135,10 +118,13 @@ final class HapticManager {
         } catch {
             playFallback(type: .directionUp)
         }
+        #else
+        playFallback(type: .directionUp)
+        #endif
     }
     
-    /// Паттерн 3: Двойной мощный толчок (Competitor Double-Vibe)
     private func playCompetitorAlert() {
+        #if os(iOS)
         guard supportsCoreHaptics, let engine = hapticEngine else {
             playFallback(type: .notification)
             return
@@ -147,7 +133,6 @@ final class HapticManager {
         let maxIntensity = CHHapticEventParameter(parameterID: .hapticIntensity, value: 1.0)
         let maxSharpness = CHHapticEventParameter(parameterID: .hapticSharpness, value: 0.9)
         
-        // Два очень жестких удара друг за другом (интервал 100мс)
         let event1 = CHHapticEvent(eventType: .hapticTransient, parameters: [maxIntensity, maxSharpness], relativeTime: 0.0)
         let event2 = CHHapticEvent(eventType: .hapticTransient, parameters: [maxIntensity, maxSharpness], relativeTime: 0.1)
         
@@ -158,18 +143,19 @@ final class HapticManager {
         } catch {
             playFallback(type: .notification)
         }
+        #else
+        playFallback(type: .notification)
+        #endif
     }
     
     // MARK: - watchOS/iOS Fallback-режим
     
-    /// Виды нативной тактильной отдачи для fallback-режима
     enum FallbackHapticType {
         case click
         case directionUp
         case notification
     }
     
-    /// Осуществляет резервную генерацию вибрации в обход CoreHaptics (для симулятора или старых watchOS)
     private func playFallback(type: FallbackHapticType) {
         #if os(watchOS)
         let device = WKInterfaceDevice.current()
