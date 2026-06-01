@@ -1,0 +1,12 @@
+### ⚠️ XCODE COMPILATION ERRORS:
+
+ExecuteExternalTool /Applications/Xcode_15.3.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ld -version_details
+
+Build description signature: 5de5f840dbe37d12e7b6a1cbd04948af
+Build description path: /Users/runner/work/clandeq/clandeq/build_derived/Build/Intermediates.noindex/XCBuildData/5de5f840dbe37d12e7b6a1cbd04948af.xcbuilddata
+error: Multiple commands produce '/Users/runner/work/clandeq/clandeq/build_derived/Build/Products/Debug-watchsimulator/ClandeqWatch.app/ClandeqWatch'
+    note: Target 'ClandeqWatch' (project 'Clandeq'): CopyAndPreserveArchs /Users/runner/work/clandeq/clandeq/build_derived/Build/Products/Debug-watchsimulator/ClandeqWatch.app/ClandeqWatch
+    note: Target 'ClandeqWatch' (project 'Clandeq') has a command with output '/Users/runner/work/clandeq/clandeq/build_derived/Build/Products/Debug-watchsimulator/ClandeqWatch.app/ClandeqWatch'
+ClangStatCache /Applications/Xcode_15.3.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang-stat-cache /Applications/Xcode_15.3.app/Contents/Developer/Platforms/WatchSimulator.platform/Developer/SDKs/WatchSimulator10.4.sdk /Users/runner/work/clandeq/clandeq/build_derived/SDKStatCaches.noindex/watchsimulator10.4-21T214-8595540259b05c9e694bc4183e7c5291.sdkstatcache
+    cd /Users/runner/work/clandeq/clandeq/ios_app/Clandeq.xcodeproj
+    /Applications/Xcode_15.3.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang-stat-cache /Applications/Xcode_15.3.app/Contents/Developer/Platforms/WatchSimulator.platform/Developer/SDKs/WatchSimulator10.4.sdk -o /Users/runner/work/clandeq/clandeq/build_derived/SDKStatCaches.noindex/watchsimulator10.4-21T214-8595540259b05c9e694bc4183e7c5291.sdkstatcache
