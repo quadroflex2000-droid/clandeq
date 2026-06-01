@@ -6,6 +6,9 @@ on:
   pull_request:
     branches: [ main, master ]
 
+permissions:
+  contents: write
+
 jobs:
   build-simulator:
     name: Build iOS Simulator App (For Web Appetize.io)
@@ -36,13 +39,18 @@ jobs:
                      CODE_SIGNING_ALLOWED=NO \
                      CODE_SIGNING_REQUIRED=NO \
                      CODE_SIGN_IDENTITY="" \
-                     clean build > build.log 2>&1 || (
-                       echo "### ⚠️ СБОЙ СБОРКИ XCODE (ОШИБКИ КОМПИЛЯЦИИ):" >> $GITHUB_STEP_SUMMARY
-                       echo '```' >> $GITHUB_STEP_SUMMARY
-                       grep -i "error:" build.log | head -n 30 >> $GITHUB_STEP_SUMMARY
-                       echo '```' >> $GITHUB_STEP_SUMMARY
-                       exit 1
-                     )
+                     clean build > build.log 2>&1
+
+      - name: Commit Compilation Error Log
+        if: failure()
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          echo "### ⚠️ XCODE COMPILATION ERRORS:" > error_log.txt
+          grep -i "error:" build.log -A 5 -B 5 >> error_log.txt || cat build.log >> error_log.txt
+          git add error_log.txt
+          git commit -m "ci: dump compilation error log [skip ci]"
+          git push origin main
 
       - name: Compress Simulator Build
         run: |
