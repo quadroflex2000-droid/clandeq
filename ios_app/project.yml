@@ -13,24 +13,34 @@ targets:
       - target: ClandeqWatch
         embed: false
       - sdk: libsqlite3.tbd
+    info:
+      path: Sources/iOS/Info.plist
+      properties:
+        CFBundleDisplayName: Clandeq
+        CFBundleIdentifier: com.papametall.Clandeq
+        CFBundleShortVersionString: "1.0.0"
+        CFBundleVersion: "1"
     settings:
-      GENERATE_INFOPLIST_FILE: YES
-      INFOPLIST_FILE: ""
-      PRODUCT_BUNDLE_IDENTIFIER: com.papametall.Clandeq
       MARKETING_VERSION: "1.0.0"
       CURRENT_PROJECT_VERSION: "1"
 
   ClandeqWatch:
-    type: application
+    type: application.watchapp2
     platform: watchOS
     deploymentTarget: "10.0"
     sources:
       - path: Sources/Watch
       - path: Sources/Shared
+    info:
+      path: Sources/Watch/Info.plist
+      properties:
+        CFBundleDisplayName: Clandeq Watch
+        CFBundleIdentifier: com.papametall.Clandeq.watchkitapp
+        CFBundleShortVersionString: "1.0.0"
+        CFBundleVersion: "1"
+        WKApplication: true
+        WKRunsIndependentlyOfCompanionApp: true
     settings:
-      GENERATE_INFOPLIST_FILE: YES
-      INFOPLIST_FILE: ""
-      PRODUCT_BUNDLE_IDENTIFIER: com.papametall.Clandeq.watchkitapp
       MARKETING_VERSION: "1.0.0"
       CURRENT_PROJECT_VERSION: "1"
 
