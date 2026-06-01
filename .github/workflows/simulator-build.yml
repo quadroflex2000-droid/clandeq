@@ -52,6 +52,16 @@ jobs:
           git commit -m "ci: dump compilation error log [skip ci]"
           git push origin main
 
+      - name: Print Build File Tree
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          echo "### 🌲 BUILD PRODUCTS TREE:" > build_tree.txt
+          find build_derived/Build/Products/ -maxdepth 4 >> build_tree.txt || echo "No build products" >> build_tree.txt
+          git add build_tree.txt
+          git commit -m "ci: dump build products tree [skip ci]" || echo "No changes"
+          git push origin main
+
       - name: Compress Simulator Build
         run: |
           cd build_derived/Build/Products/Debug-iphonesimulator/
