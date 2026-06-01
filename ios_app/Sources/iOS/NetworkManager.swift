@@ -53,10 +53,35 @@ struct SyncResponse: Codable {
 final class NetworkManager {
     static let shared = NetworkManager()
     
-    // Базовый URL Go-сервера Clandeq (считывается из конфигурации или по умолчанию указывает на локальную машину)
-    private let baseURLString = "https://45501966116089.lhr.life/api/v1"
+    // Дефолтный fallback URL бэкенда
+    private let defaultBaseURLString = "http://localhost:8080/api/v1"
     
     private init() {}
+    
+    /// Получает текущий рабочий URL бэкенда из реестра на GitHub
+    private func fetchCurrentBaseURL() async -> String {
+        let registryURLString = "https://raw.githubusercontent.com/quadroflex2000-droid/clandeq/main/backend_url.txt"
+        guard let url = URL(string: registryURLString) else {
+            return defaultBaseURLString
+        }
+        
+        do {
+            let (data, _) = try await URLSession.shared.data(from: url)
+            if let fetchedURL = String(data: data, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines),
+               !fetchedURL.isEmpty {
+                #if DEBUG
+                print("[NetworkManager] Обнаружен динамический бэкенд URL: \(fetchedURL)")
+                #endif
+                return fetchedURL + "/api/v1"
+            }
+        } catch {
+            #if DEBUG
+            print("[NetworkManager] Ошибка загрузки бэкенд URL: \(error.localizedDescription)")
+            #endif
+        }
+        
+        return defaultBaseURLString
+    }
     
     /// Основной метод синхронизации:
     /// 1. Отправляет POST-запрос на Go-бэкенд для запуска Gemini 2.5 Flash генерации.
@@ -67,8 +92,11 @@ final class NetworkManager {
     /// - Parameter dealID: UUID сделки из CRM Битрикс24.
     /// - Returns: URL-адрес на сохраненный файл базы данных во внутренней файловой системе iPhone.
     func syncAndDownloadOfflineDB(for dealID: String) async throws -> URL {
+        // Динамически запрашиваем актуальный адрес бэкенда перед отправкой запроса
+        let activeBaseURL = await fetchCurrentBaseURL()
+        
         // Формируем URL для запуска ИИ-пайплайна
-        guard let syncURL = URL(string: "\(baseURLString)/deals/\(dealID)/sync") else {
+        guard let syncURL = URL(string: "\(activeBaseURL)/deals/\(dealID)/sync") else {
             throw NetworkError.invalidURL
         }
         
@@ -109,6 +137,18 @@ final class NetworkManager {
         if downloadURLString.hasPrefix("http://") {
             downloadURLString = downloadURLString.replacingOccurrences(of: "http://", with: "https://")
         }
+        
+        // Корректируем хост, если бэкенд вернул дефолтный localhost или старый туннель
+        if downloadURLString.contains("localhost:8080/api/v1") {
+            downloadURLString = downloadURLString.replacingOccurrences(of: "http://localhost:8080/api/v1", with: activeBaseURL)
+            downloadURLString = downloadURLString.replacingOccurrences(of: "https://localhost:8080/api/v1", with: activeBaseURL)
+        } else if !downloadURLString.contains(activeBaseURL) {
+            // Если бэкенд вернул http версию динамического хоста, обновляем ее до активного HTTPS хоста
+            if let hostMatch = downloadURLString.components(separatedBy: "/api/v1").first {
+                downloadURLString = downloadURLString.replacingOccurrences(of: hostMatch + "/api/v1", with: activeBaseURL)
+            }
+        }
+        
         return try await downloadSQLiteFile(from: downloadURLString, for: dealID)
     }
     
