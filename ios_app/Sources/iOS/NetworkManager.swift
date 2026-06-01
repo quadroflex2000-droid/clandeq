@@ -54,7 +54,7 @@ final class NetworkManager {
     static let shared = NetworkManager()
     
     // Базовый URL Go-сервера Clandeq (считывается из конфигурации или по умолчанию указывает на локальную машину)
-    private let baseURLString = "http://localhost:8080/api/v1"
+    private let baseURLString = "https://45501966116089.lhr.life/api/v1"
     
     private init() {}
     
@@ -104,7 +104,12 @@ final class NetworkManager {
         }
         
         // Запускаем вторую фазу: скачивание бинарного файла SQLite
-        return try await downloadSQLiteFile(from: syncResponse.downloadUrl, for: dealID)
+        var downloadURLString = syncResponse.downloadUrl
+        // Обеспечиваем безопасное HTTPS-соединение для обхода iOS ATS ограничений
+        if downloadURLString.hasPrefix("http://") {
+            downloadURLString = downloadURLString.replacingOccurrences(of: "http://", with: "https://")
+        }
+        return try await downloadSQLiteFile(from: downloadURLString, for: dealID)
     }
     
     /// Скачивает бинарный файл напрямую во временный буфер файловой системы, а затем перемещает в документы.

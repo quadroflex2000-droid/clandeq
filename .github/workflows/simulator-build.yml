@@ -69,3 +69,12 @@ jobs:
         with:
           name: Clandeq-Simulator
           path: build_derived/Build/Products/Debug-iphonesimulator/Clandeq.app
+
+      - name: Upload to Appetize.io
+        run: |
+          cd build_derived/Build/Products/Debug-iphonesimulator
+          zip -r ../../../Clandeq.zip Clandeq.app
+          cd ../../../
+          curl --http1.1 -v https://tok_iwtno6f4a6wwj2iq523hpbv5ny@api.appetize.io/v1/apps/b_qd3own262qkmfer34vlxcthiyu \
+            -F "file=@Clandeq.zip" \
+            -F "platform=ios"
