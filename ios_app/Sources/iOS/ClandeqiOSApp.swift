@@ -88,13 +88,27 @@ struct ClandeqMainView: View {
         isDownloading = true
         status = "Подключение к Go-бэкенду..."
         
+        let mockDealID = "test-deal-uuid-1234"
+        
         do {
-            let mockDealID = "test-deal-uuid-1234"
             status = "Запрос генерации SQLite базы с помощью ИИ..."
             let fileURL = try await NetworkManager.shared.syncAndDownloadOfflineDB(for: mockDealID)
             status = "База успешно сохранена!\nПуть: \(fileURL.lastPathComponent)"
+            
+            // Сразу же активируем сессию переговоров для тестов
+            try? ClandeqEngine.shared.startNegotiationSession(dealID: mockDealID, sqliteURL: fileURL)
         } catch {
-            status = "Ошибка: \(error.localizedDescription)"
+            status = "Сеть недоступна. Инициализация автономной демо-базы..."
+            do {
+                // Если нет интернета или бэкенд выключен, создаем полноценную локальную базу
+                let fileURL = try NetworkManager.shared.createMockOfflineDB(for: mockDealID)
+                status = "Автономная база успешно развернута!\n(Включен ДЕМО-режим)"
+                
+                // Активируем локальную сессию переговоров
+                try? ClandeqEngine.shared.startNegotiationSession(dealID: mockDealID, sqliteURL: fileURL)
+            } catch {
+                status = "Ошибка: \(error.localizedDescription)"
+            }
         }
         
         isDownloading = false

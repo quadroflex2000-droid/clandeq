@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import SQLite3
 
 /// Перечисление возможных сетевых ошибок и сбоев файловой системы.
 /// Соответствует протоколу LocalizedError для автоматического отображения читаемых сообщений на русском языке.
@@ -218,6 +219,65 @@ final class NetworkManager {
         print("[Clandeq iOS] База данных сделки \(dealID) успешно зафиксирована в локальном хранилище по пути: \(destinationURL.path)")
         #endif
         
+        return destinationURL
+    }
+    
+    /// Локально разворачивает оффлайн демо-база данных SQLite прямо на устройстве в условиях отсутствия интернета
+    func createMockOfflineDB(for dealID: String) throws -> URL {
+        let fileManager = FileManager.default
+        guard let documentsURL = fileManager.urls(for: .documentDirectory, in: .userDomainMask).first else {
+            throw NetworkError.filesystemError("Не удалось получить доступ к DocumentDirectory.")
+        }
+        
+        let clandeqFolderURL = documentsURL.appendingPathComponent("Clandeq", isDirectory: true)
+        if !fileManager.fileExists(atPath: clandeqFolderURL.path) {
+            try fileManager.createDirectory(at: clandeqFolderURL, withIntermediateDirectories: true, attributes: nil)
+        }
+        
+        let destinationURL = clandeqFolderURL.appendingPathComponent("deal_\(dealID)_offline.sqlite")
+        
+        // Если база существует, удаляем её перед пересозданием
+        if fileManager.fileExists(atPath: destinationURL.path) {
+            try fileManager.removeItem(at: destinationURL)
+        }
+        
+        var db: OpaquePointer?
+        let flags = SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE | SQLITE_OPEN_FULLMUTEX
+        
+        guard sqlite3_open_v2(destinationURL.path, &db, flags, nil) == SQLITE_OK else {
+            let errorMsg = db != nil ? String(cString: sqlite3_errmsg(db)) : "Неизвестная ошибка"
+            throw NetworkError.filesystemError("Ошибка создания локальной базы: \(errorMsg)")
+        }
+        
+        defer { sqlite3_close(db) }
+        
+        let createQueries = [
+            "CREATE TABLE IF NOT EXISTS deal_context (compressed_history TEXT);",
+            "CREATE TABLE IF NOT EXISTS objection_rules (id INTEGER PRIMARY KEY, objection_trigger TEXT, response_script TEXT, haptic_pattern INTEGER);",
+            "CREATE VIRTUAL TABLE IF NOT EXISTS objection_rules_fts USING fts5(objection_trigger, response_script);"
+        ]
+        
+        for query in createQueries {
+            guard sqlite3_exec(db, query, nil, nil, nil) == SQLITE_OK else {
+                let errorMsg = db != nil ? String(cString: sqlite3_errmsg(db)) : "Неизвестная ошибка SQL"
+                throw NetworkError.filesystemError("Ошибка инициализации таблиц: \(errorMsg)")
+            }
+        }
+        
+        // Вставка демонстрационных данных
+        let inserts = [
+            "INSERT INTO deal_context (compressed_history) VALUES ('• ДЕМО-РЕЖИМ (100% ОФФЛАЙН)\n• Инициализирован умный локальный симулятор переговоров.\n• Регламент тактик загружен из локального хранилища.');",
+            "INSERT INTO objection_rules (id, objection_trigger, response_script, haptic_pattern) VALUES (1, 'дорого', 'Мы используем премиальную фурнитуру Blum и сертифицированную сталь с пожизненной гарантией. Это экономит до сорока процентов бюджета на дистанции пяти лет.', 2);",
+            "INSERT INTO objection_rules (id, objection_trigger, response_script, haptic_pattern) VALUES (2, 'сроки', 'Все сорванные сроки компенсируются в размере одного процента от суммы контракта за каждый день просрочки по официальному договору.', 3);",
+            "INSERT INTO objection_rules_fts (rowid, objection_trigger, response_script) VALUES (1, 'дорого', 'Мы используем премиальную фурнитуру Blum и сертифицированную сталь с пожизненной гарантией.');",
+            "INSERT INTO objection_rules_fts (rowid, objection_trigger, response_script) VALUES (2, 'сроки', 'Все сорванные сроки компенсируются в размере одного процента от суммы контракта.');"
+        ]
+        
+        for query in inserts {
+            sqlite3_exec(db, query, nil, nil, nil)
+        }
+        
+        print("[NetworkManager] Локальная демо-база успешно инициализирована по пути: \(destinationURL.path)")
         return destinationURL
     }
 }
